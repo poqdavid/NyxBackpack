@@ -1,8 +1,3 @@
-# NyxBackpack
-A simple backpack plugin.
-
-----------
-
 **This plugin uses bStats I would really appreciate it if you guys allow data collection by running `/sponge metrics NyxBackpack enable`**
 
 ## Migrating from VirtualTool
