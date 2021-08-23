@@ -1,0 +1,3 @@
+rootProject.name = 'NyxBackpack'
+include 'NyxCore'
+project(':NyxCore').projectDir = file('../NyxCore')
