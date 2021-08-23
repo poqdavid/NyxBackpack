@@ -3,6 +3,9 @@
 ## Migrating from VirtualTool
 Copy files in `/config/virtualtool/backpacks` to `/config/Nyx/NyxBackpack/backpacks/`
 
+## Dependencies / Requirements
+NyxCore https://poqdavid.github.io/NyxCore/
+
 ## Commands
 	/backpack, /bp  [[<player>]] [<size>] [-m <m>]
 	/backpacklock, /bplock  <player> [-l <l>] [-u <u>]
