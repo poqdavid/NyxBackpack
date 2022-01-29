@@ -21,7 +21,7 @@
 package io.github.poqdavid.nyx.nyxbackpack.Commands;
 
 import io.github.poqdavid.nyx.nyxcore.Permissions.BackpackPermission;
-import io.github.poqdavid.nyx.nyxcore.Utils.Tools;
+import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandPermissionException;
 import org.spongepowered.api.command.CommandResult;
@@ -32,7 +32,6 @@ import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.text.Text;
 
 import java.util.Optional;
-
 
 public class BackpackLockCMD implements CommandExecutor {
 
@@ -59,17 +58,17 @@ public class BackpackLockCMD implements CommandExecutor {
             if (user_args != null) {
                 if (args.hasAny("l") || args.hasAny("u")) {
                     if (args.hasAny("l")) {
-                        if (!Tools.backpackCheckLock(user_args)) {
+                        if (!CoreTools.backpackCheckLock(user_args)) {
                             this.bpLock(user_args, src);
                         }
                     }
                     if (args.hasAny("u")) {
-                        if (Tools.backpackCheckLock(user_args)) {
+                        if (CoreTools.backpackCheckLock(user_args)) {
                             this.bpunlock(user_args, src);
                         }
                     }
                 } else {
-                    if (Tools.backpackCheckLock(user_args)) {
+                    if (CoreTools.backpackCheckLock(user_args)) {
                         this.bpunlock(user_args, src);
                     } else {
                         this.bpLock(user_args, src);
@@ -83,7 +82,7 @@ public class BackpackLockCMD implements CommandExecutor {
     }
 
     private void bpLock(User user_args, CommandSource src) {
-        if (Tools.lockBackpack(user_args, true)) {
+        if (CoreTools.lockBackpack(user_args, true)) {
             src.sendMessage(Text.of("Backpack for " + user_args.getName() + " is now locked"));
         } else {
             src.sendMessage(Text.of("Backpack lock for " + user_args.getName() + " didn't work"));
@@ -91,7 +90,7 @@ public class BackpackLockCMD implements CommandExecutor {
     }
 
     private void bpunlock(User user_args, CommandSource src) {
-        if (Tools.unlockBackpack(user_args, true)) {
+        if (CoreTools.unlockBackpack(user_args, true)) {
             src.sendMessage(Text.of("Backpack for " + user_args.getName() + " is now unlocked"));
         } else {
             src.sendMessage(Text.of("Backpack unlock for " + user_args.getName() + " didn't work"));

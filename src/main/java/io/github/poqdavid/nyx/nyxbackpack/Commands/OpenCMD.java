@@ -23,7 +23,7 @@ package io.github.poqdavid.nyx.nyxbackpack.Commands;
 import io.github.poqdavid.nyx.nyxbackpack.NyxBackpack;
 import io.github.poqdavid.nyx.nyxbackpack.Utils.Backpack;
 import io.github.poqdavid.nyx.nyxcore.Permissions.BackpackPermission;
-import io.github.poqdavid.nyx.nyxcore.Utils.Tools;
+import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandPermissionException;
 import org.spongepowered.api.command.CommandResult;
@@ -64,7 +64,7 @@ public class OpenCMD implements CommandExecutor {
     @Override
     public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
         if (src instanceof Player) {
-            final Player player_cmd_src = Tools.getPlayer(src);
+            final Player player_cmd_src = CoreTools.getPlayer(src);
             final Optional<User> user = args.getOne("user");
             User user_args = null;
             if (user.isPresent()) {

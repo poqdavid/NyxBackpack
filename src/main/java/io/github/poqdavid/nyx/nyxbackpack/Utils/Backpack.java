@@ -25,7 +25,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.github.poqdavid.nyx.nyxbackpack.NyxBackpack;
-import io.github.poqdavid.nyx.nyxcore.Utils.Tools;
+import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
 import org.apache.commons.io.FileUtils;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
@@ -91,9 +91,9 @@ public class Backpack {
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
         if (items == null || items.isEmpty()) {
-            Tools.WriteFile(this.backpackFilePath.toFile(), "{}");
+            CoreTools.WriteFile(this.backpackFilePath.toFile(), "{}");
         } else {
-            Tools.WriteFile(this.backpackFilePath.toFile(), gson.toJson(items));
+            CoreTools.WriteFile(this.backpackFilePath.toFile(), gson.toJson(items));
         }
     }
 
@@ -105,7 +105,7 @@ public class Backpack {
             if (slot.getProperty(SlotIndex.class, "slotindex").isPresent()) {
 
                 Integer index = slot.getProperty(SlotIndex.class, "slotindex").get().getValue();
-                SlotPos slotP = Tools.indexToSP(index);
+                SlotPos slotP = CoreTools.indexToSP(index);
                 items.put(slotP.getX() + "," + slotP.getY(), "EMPTY");
 
                 if (slot.size() > 0) {
@@ -117,7 +117,7 @@ public class Backpack {
                             if (!slot.peek().get().getType().equals(ItemTypes.NONE)) {
                                 try {
 
-                                    items.put(slotP.getX() + "," + slotP.getY(), Tools.ItemStackToBase64(slot.peek().get()));
+                                    items.put(slotP.getX() + "," + slotP.getY(), CoreTools.ItemStackToBase64(slot.peek().get()));
 
                                 } catch (Exception e) {
                                     NyxBackpack.getInstance().getLogger().error("Failed to load a stack data from inventory for this user: " + user.getName() + " SlotPos: " + slotP.getX() + "X," + slotP.getY() + "Y");
@@ -143,7 +143,7 @@ public class Backpack {
         final File file = this.backpackFilePath.toFile();
 
         if (!file.exists()) {
-            Tools.WriteFile(file, "{}");
+            CoreTools.WriteFile(file, "{}");
         }
 
         Gson gson = new Gson();
@@ -180,7 +180,7 @@ public class Backpack {
                         final SlotPos sp = SlotPos.of(Integer.parseInt(entry.getKey().split(",")[0]), Integer.parseInt(entry.getKey().split(",")[1]));
                         try {
                             if (!entry.getValue().equals("EMPTY")) {
-                                final ItemStack itemST = Tools.Base64ToItemStack(entry.getValue());
+                                final ItemStack itemST = CoreTools.Base64ToItemStack(entry.getValue());
                                 this.inventory.query(QueryOperationTypes.INVENTORY_PROPERTY.of(sp)).set(itemST);
                             } else {
                                 this.inventory.query(QueryOperationTypes.INVENTORY_PROPERTY.of(sp)).set(ItemStack.empty());

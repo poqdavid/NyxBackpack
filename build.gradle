@@ -27,6 +27,7 @@ buildscript {
         classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
         classpath "org.spongepowered:SpongeGradle:0.11.5"
         classpath "gradle.plugin.net.minecrell:licenser:0.4.1"
+        classpath "net.kyori:blossom:1.+"
     }
 }
 
@@ -42,10 +43,21 @@ apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'net.minecrell.licenser'
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'org.spongepowered.gradle.plugin'
+apply plugin: 'net.kyori.blossom'
 
 group = "${getProjectProperty('m_group')}" as Object
 version = "${getProjectProperty('minecraft_version')}-${getProjectProperty('m_major')}.${getProjectProperty('m_minor')}-${getProjectProperty('m_api')}-${getProjectProperty('m_suffix')}" as Object
 description = "${getProjectProperty('m_description')}"
+
+blossom {
+    replaceToken("@version@", "${getProjectProperty('m_major')}.${getProjectProperty('m_minor')}")
+    replaceToken("@description@", description)
+    replaceToken("@id@", m_id)
+    replaceToken("@name@", m_name)
+    replaceToken("@organization@", m_organization)
+    replaceToken("@authors@", m_authors)
+    replaceToken("@url@", m_url)
+}
 
 if (System.getenv().BUILD_NUMBER != null) {
     version += "+${System.getenv().BUILD_NUMBER}"
@@ -110,21 +122,23 @@ configurations {
 }
 
 dependencies {
+    implementation group: 'org.bstats', name: 'bstats-sponge', version: getProjectProperty('bstats')
+    shadow group: 'org.bstats', name: 'bstats-sponge', version: getProjectProperty('bstats')
+
     minecraft "net.minecraftforge:forge:${getProjectProperty('forgeVersion')}"
+
     implementation("org.spongepowered:spongeapi:${getProjectProperty('spongeapi')}")
-    compile 'org.spongepowered:mixin:0.8.3-SNAPSHOT'
-    compile 'org.spongepowered:mixin:0.8.3-SNAPSHOT:processor'
-
-    implementation 'org.spongepowered:mixin:0.8.1-SNAPSHOT'
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    compile group: 'commons-io', name: 'commons-io', version: '2.6'
-    compile group: 'org.bstats', name: 'bstats-sponge', version: '2.2.1'
-    shadow group: 'org.bstats', name: 'bstats-sponge', version: '2.2.1'
-
     annotationProcessor("org.spongepowered:spongeapi:${getProjectProperty('spongeapi')}")
-    annotationProcessor("org.spongepowered:mixin:0.8.3-SNAPSHOT:processor")
 
-    implementation files('../NyxCore/build/libs/NyxCore-1.12.2-1.1-S7.3.0-STABLE.jar')
+    implementation 'org.spongepowered:mixin:0.8.5-SNAPSHOT'
+    compile 'org.spongepowered:mixin:0.8.5-SNAPSHOT:processor'
+
+    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
+
+    implementation("javax.validation:validation-api:2.0.1.Final")
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+
+    implementation 'io.github.poqdavid.nyx:NyxCore'
 }
 
 license {

@@ -25,7 +25,7 @@ import io.github.poqdavid.nyx.nyxbackpack.Commands.CommandManager;
 import io.github.poqdavid.nyx.nyxcore.NyxCore;
 import io.github.poqdavid.nyx.nyxcore.Utils.CText;
 import io.github.poqdavid.nyx.nyxcore.Utils.NCLogger;
-import io.github.poqdavid.nyx.nyxcore.Utils.Tools;
+import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
 import org.bstats.sponge.Metrics;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
@@ -43,7 +43,6 @@ import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
-import org.spongepowered.api.service.permission.PermissionDescription;
 import org.spongepowered.api.service.permission.PermissionService;
 
 import javax.annotation.Nonnull;
@@ -51,7 +50,7 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 
 
-@Plugin(id = PluginData.id, name = PluginData.name, version = PluginData.version, description = PluginData.description, url = PluginData.url, authors = {PluginData.author1}, dependencies = {@Dependency(id = "nyxcore", version = "1.1", optional = false)})
+@Plugin(id = "nyxbackpack", name = "@name@", version = "@version@", description = "@description@", url = "https://github.com/poqdavid/NyxBackpack", authors = {"@authors@"}, dependencies = {@Dependency(id = "nyxcore", version = "1.5", optional = false)})
 public class NyxBackpack {
 
     private static NyxBackpack nyxbackpack;
@@ -71,7 +70,7 @@ public class NyxBackpack {
         this.logger = NyxCore.getInstance().getLogger(CText.get(CText.Colors.BLUE, 1, "Nyx") + CText.get(CText.Colors.MAGENTA, 0, "Backpack"));
 
         this.logger.info(" ");
-        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "NyxBackpack") + CText.get(CText.Colors.YELLOW, 0, " v" + io.github.poqdavid.nyx.nyxbackpack.PluginData.version));
+        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "@name@") + CText.get(CText.Colors.YELLOW, 0, " v" + this.getVersion()));
         this.logger.info("Starting...");
         this.logger.info(" ");
 
@@ -101,7 +100,11 @@ public class NyxBackpack {
 
     @Nonnull
     public String getVersion() {
-        return PluginData.version;
+        if (this.getPluginContainer().getVersion().isPresent()) {
+            return this.getPluginContainer().getVersion().get();
+        } else {
+            return "@version@";
+        }
     }
 
     @Nonnull
@@ -122,11 +125,11 @@ public class NyxBackpack {
     @Listener
     public void onGamePreInit(@Nullable final GamePreInitializationEvent event) {
         this.logger.info(" ");
-        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "NyxBackpack") + CText.get(CText.Colors.YELLOW, 0, " v" + io.github.poqdavid.nyx.nyxbackpack.PluginData.version));
+        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "@name@") + CText.get(CText.Colors.YELLOW, 0, " v" + this.getVersion()));
         this.logger.info("Initializing...");
         this.logger.info(" ");
 
-        Tools.backpackUnlockAll();
+        CoreTools.backpackUnlockAll();
     }
 
     @Listener
@@ -160,15 +163,15 @@ public class NyxBackpack {
 
     @Listener
     public void onPlayerJoin(ClientConnectionEvent.Join event) {
-        final Player player = Tools.getPlayer(event.getCause()).get();
-        Tools.MakeNewBP(player);
+        final Player player = CoreTools.getPlayer(event.getCause()).get();
+        CoreTools.MakeNewBP(player);
     }
 
     @Listener
     public void onGameReload(@Nullable final GameReloadEvent event) {
         this.logger.info("Reloading...");
 
-        Tools.backpackUnlockAll();
+        CoreTools.backpackUnlockAll();
         this.logger.info("Reloaded!");
     }
 
