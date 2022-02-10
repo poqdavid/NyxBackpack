@@ -130,10 +130,10 @@ dependencies {
     implementation("org.spongepowered:spongeapi:${getProjectProperty('spongeapi')}")
     annotationProcessor("org.spongepowered:spongeapi:${getProjectProperty('spongeapi')}")
 
-    implementation 'org.spongepowered:mixin:0.8.5-SNAPSHOT'
-    compile 'org.spongepowered:mixin:0.8.5-SNAPSHOT:processor'
+    implementation "org.spongepowered:mixin:${getProjectProperty('spongemixin')}"
+    compile "org.spongepowered:mixin:${getProjectProperty('spongemixin')}:processor"
 
-    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
+    annotationProcessor("org.spongepowered:mixin:${getProjectProperty('spongemixin')}:processor")
 
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation group: 'commons-io', name: 'commons-io', version: '2.6'
