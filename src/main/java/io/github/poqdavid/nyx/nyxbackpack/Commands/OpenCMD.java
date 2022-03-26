@@ -32,10 +32,7 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
-import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.property.InventoryTitle;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,8 +68,6 @@ public class OpenCMD implements CommandExecutor {
                 user_args = user.get();
             }
 
-            final Integer bpszie = args.<Integer>getOne("size").orElse(0);
-
             src.sendMessage(Text.of("§6Opening Backpack for:"));
 
             src.sendMessage(Text.of("§6Name: §7" + user_args.getName()));
@@ -84,18 +79,31 @@ public class OpenCMD implements CommandExecutor {
                         if (user_args.hasPermission(BackpackPermission.COMMAND_BACKPACK_MAIN)) {
                             if (args.hasAny("m")) {
                                 if (player_cmd_src.hasPermission(BackpackPermission.COMMAND_BACKPACK_ADMIN_MODIFY)) {
-                                    this.backpackcheck(user_args);
-                                    this.backpackchecklock(user_args, player_cmd_src);
 
-                                    final Backpack backpack = new Backpack(user_args, player_cmd_src, this.getBackpackSize(user_args, bpszie), true, this.nb);
-                                    player_cmd_src.openInventory(backpack.getBackpack());
+                                    this.backpackCheck(user_args);
+                                    this.backpackCheckLock(user_args, player_cmd_src);
+
+                                    if (!NyxBackpack.Backpacks.containsKey(user_args.getUniqueId())) {
+                                        Backpack backpack = new Backpack(user_args, CoreTools.getBackpackSize(user_args));
+                                        NyxBackpack.Backpacks.put(user_args.getUniqueId(), backpack);
+                                    }
+
+                                    NyxBackpack.Backpacks.get(user_args.getUniqueId()).openBackpack(player_cmd_src, false, false);
+
                                 } else {
                                     throw new CommandPermissionException(Text.of("You don't have permission to modify other backpacks."));
                                 }
                             } else {
-                                this.backpackcheck(user_args);
-                                final Backpack backpack = new Backpack(user_args, player_cmd_src, this.getBackpackSize(user_args, bpszie), false, nb);
-                                player_cmd_src.openInventory(backpack.getBackpack());
+
+                                this.backpackCheck(user_args);
+
+                                if (!NyxBackpack.Backpacks.containsKey(user_args.getUniqueId())) {
+                                    Backpack backpack = new Backpack(user_args, CoreTools.getBackpackSize(user_args));
+                                    NyxBackpack.Backpacks.put(user_args.getUniqueId(), backpack);
+                                }
+
+                                NyxBackpack.Backpacks.get(user_args.getUniqueId()).openBackpack(player_cmd_src, true);
+
                             }
                         } else {
                             throw new CommandPermissionException(Text.of("This user doesn't have permission to use backpack."));
@@ -116,106 +124,16 @@ public class OpenCMD implements CommandExecutor {
         return CommandResult.success();
     }
 
-    public int getBackpackSize(User user) {
-        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_SIX))
-            return 6;
-        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FIVE))
-            return 5;
-        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FOUR))
-            return 4;
-        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_THREE))
-            return 3;
-        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_TWO))
-            return 2;
-        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_ONE))
-            return 1;
-        return 1;
-    }
-
-    public int getBackpackSize(User user, Integer size) {
-        if (size == 0) {
-            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_SIX))
-                return 6;
-            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FIVE))
-                return 5;
-            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FOUR))
-                return 4;
-            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_THREE))
-                return 3;
-            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_TWO))
-                return 2;
-            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_ONE))
-                return 1;
-            return 1;
-        } else {
-            if (size < 6) {
-                return 6;
-            } else {
-                return size;
-            }
-        }
-
-    }
-
-    private void backpackchecklock(User user, Player playersrc) throws CommandException {
+    private void backpackCheckLock(User user, Player playersrc) throws CommandException {
 
         Path file = Paths.get(this.nb.getConfigPath() + File.separator + "backpacks" + File.separator + user.getUniqueId() + ".lock");
 
         if (Files.exists(file)) {
             throw new CommandPermissionException(Text.of("Sorry currently your backpack is locked."));
-        } else {
-            if (isBackpackOpen(user)) {
-                throw new CommandPermissionException(Text.of("Sorry currently your backpack is locked!!"));
-            }
         }
     }
 
-    private Boolean isBackpackOpen(User user) {
-        String tl = user.getName() + "'s " + "Backpack";
-        if (user.isOnline()) {
-            if (user.getPlayer().isPresent()) {
-                Player player = user.getPlayer().get();
-                if (player.isViewingInventory()) {
-                    Inventory inv = player.getInventory();
-
-                    InventoryTitle title = inv.getInventoryProperty(InventoryTitle.class).orElse(InventoryTitle.of(Text.of("NONE")));
-                    String titles = TextSerializers.FORMATTING_CODE.serialize(title.getValue());
-
-                    if (titles == "Backpack") {
-                        return true;
-                    } else {
-                        return searchInvs(tl);
-                    }
-
-                } else {
-
-                    return searchInvs(tl);
-                }
-            } else {
-                return searchInvs(tl);
-            }
-        } else {
-            return searchInvs(tl);
-        }
-    }
-
-    private Boolean searchInvs(String title) {
-        for (Player pl : this.nb.getGame().getServer().getOnlinePlayers()) {
-            if (pl.isViewingInventory()) {
-                Inventory inv2 = pl.getInventory();
-
-                InventoryTitle title2 = inv2.getInventoryProperty(InventoryTitle.class).orElse(InventoryTitle.of(Text.of("NONE")));
-                String titles2 = TextSerializers.FORMATTING_CODE.serialize(title2.getValue());
-
-                if (titles2 == title) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private void backpackcheck(User user) throws CommandException {
+    private void backpackCheck(User user) throws CommandException {
         Path file = Paths.get(this.nb.getConfigPath() + File.separator + "backpacks" + File.separator + user.getUniqueId() + ".backpack");
         if (!Files.exists(file)) {
             throw new CommandPermissionException(Text.of("Sorry there is no backpack data for " + user.getName()));

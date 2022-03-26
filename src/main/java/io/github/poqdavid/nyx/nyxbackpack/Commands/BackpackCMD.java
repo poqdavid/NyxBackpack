@@ -21,7 +21,6 @@
 package io.github.poqdavid.nyx.nyxbackpack.Commands;
 
 import io.github.poqdavid.nyx.nyxbackpack.NyxBackpack;
-import io.github.poqdavid.nyx.nyxbackpack.Utils.Backpack;
 import io.github.poqdavid.nyx.nyxcore.Permissions.BackpackPermission;
 import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
 import org.spongepowered.api.command.CommandException;
@@ -31,10 +30,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.property.InventoryTitle;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -65,9 +61,7 @@ public class BackpackCMD implements CommandExecutor {
             if (player_cmd_src.hasPermission(BackpackPermission.COMMAND_BACKPACK_MAIN)) {
 
                 this.backpackCheckLock(player_cmd_src, player_cmd_src);
-
-                final Backpack backpack = new Backpack(player_cmd_src, player_cmd_src, this.getBackpackSize(player_cmd_src), true, nb);
-                player_cmd_src.openInventory(backpack.getBackpack());
+                NyxBackpack.Backpacks.get(player_cmd_src.getUniqueId()).openBackpack();
 
             } else {
                 throw new CommandPermissionException(Text.of("You don't have permission to use this command."));
@@ -78,77 +72,12 @@ public class BackpackCMD implements CommandExecutor {
         return CommandResult.success();
     }
 
-    public int getBackpackSize(Player player) {
-        if (player.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_SIX))
-            return 6;
-        if (player.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FIVE))
-            return 5;
-        if (player.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FOUR))
-            return 4;
-        if (player.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_THREE))
-            return 3;
-        if (player.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_TWO))
-            return 2;
-        if (player.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_ONE))
-            return 1;
-        return 1;
-    }
-
-
     private void backpackCheckLock(Player player, Player playerSrc) throws CommandException {
 
         Path file = Paths.get(this.nb.getConfigPath() + File.separator + "backpacks" + File.separator + player.getUniqueId() + ".lock");
 
         if (Files.exists(file)) {
             throw new CommandPermissionException(Text.of("Sorry currently your backpack is locked."));
-        } else {
-
-            if (isBackpackOpen(player)) {
-                throw new CommandPermissionException(Text.of("Sorry currently your backpack is locked!!"));
-            }
         }
     }
-
-    private Boolean isBackpackOpen(Player player) {
-        String tl = player.getName() + "'s " + "Backpack";
-        if (player.isOnline()) {
-            if (player.isViewingInventory()) {
-                Inventory inv = player.getInventory();
-
-                InventoryTitle title = inv.getInventoryProperty(InventoryTitle.class).orElse(InventoryTitle.of(Text.of("NONE")));
-                String titles = TextSerializers.FORMATTING_CODE.serialize(title.getValue());
-
-                if (titles.equals("Backpack")) {
-                    return true;
-                } else {
-                    return searchInvs(tl);
-                }
-
-            } else {
-
-                return searchInvs(tl);
-            }
-
-        } else {
-            return searchInvs(tl);
-        }
-    }
-
-    private Boolean searchInvs(String title) {
-        for (Player pl : this.nb.getGame().getServer().getOnlinePlayers()) {
-            if (pl.isViewingInventory()) {
-                Inventory inv2 = pl.getInventory();
-
-                InventoryTitle title2 = inv2.getInventoryProperty(InventoryTitle.class).orElse(InventoryTitle.of(Text.of("NONE")));
-                String titles2 = TextSerializers.FORMATTING_CODE.serialize(title2.getValue());
-
-                if (titles2.equals(title)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-
 }

@@ -22,23 +22,23 @@ package io.github.poqdavid.nyx.nyxbackpack;
 
 import com.google.inject.Inject;
 import io.github.poqdavid.nyx.nyxbackpack.Commands.CommandManager;
+import io.github.poqdavid.nyx.nyxbackpack.Listeners.NyxBackpackListener;
+import io.github.poqdavid.nyx.nyxbackpack.Utils.Backpack;
 import io.github.poqdavid.nyx.nyxcore.NyxCore;
 import io.github.poqdavid.nyx.nyxcore.Utils.CText;
-import io.github.poqdavid.nyx.nyxcore.Utils.NCLogger;
 import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
+import io.github.poqdavid.nyx.nyxcore.Utils.NCLogger;
 import org.bstats.sponge.Metrics;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
-import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStartingServerEvent;
-import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.event.service.ChangeServiceProviderEvent;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
@@ -48,17 +48,20 @@ import org.spongepowered.api.service.permission.PermissionService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 
-@Plugin(id = "nyxbackpack", name = "@name@", version = "@version@", description = "@description@", url = "https://github.com/poqdavid/NyxBackpack", authors = {"@authors@"}, dependencies = {@Dependency(id = "nyxcore", version = "1.5", optional = false)})
+@Plugin(id = "nyxbackpack", name = "@name@", version = "@version@", description = "@description@", url = "https://github.com/poqdavid/NyxBackpack", authors = {"@authors@"}, dependencies = {@Dependency(id = "nyxcore", version = "1.+", optional = false)})
 public class NyxBackpack {
 
+    public static Map<UUID, Backpack> Backpacks = new HashMap<>();
     private static NyxBackpack nyxbackpack;
     private final NCLogger logger;
     private final PluginContainer pluginContainer;
     private final Metrics metrics;
     public PermissionService permService;
-
     @Inject
     private Game game;
     private CommandManager cmdManager;
@@ -146,6 +149,9 @@ public class NyxBackpack {
             return;
         }
 
+        NyxBackpackListener listener = new NyxBackpackListener();
+        Sponge.getEventManager().registerListeners(this, listener);
+
         this.logger.info("Plugin Initialized successfully!");
     }
 
@@ -162,17 +168,10 @@ public class NyxBackpack {
     }
 
     @Listener
-    public void onPlayerJoin(ClientConnectionEvent.Join event) {
-        final Player player = CoreTools.getPlayer(event.getCause()).get();
-        CoreTools.MakeNewBP(player);
-    }
-
-    @Listener
     public void onGameReload(@Nullable final GameReloadEvent event) {
         this.logger.info("Reloading...");
 
         CoreTools.backpackUnlockAll();
         this.logger.info("Reloaded!");
     }
-
 }

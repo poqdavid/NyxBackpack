@@ -27,9 +27,11 @@ import com.google.gson.reflect.TypeToken;
 import io.github.poqdavid.nyx.nyxbackpack.NyxBackpack;
 import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
 import org.apache.commons.io.FileUtils;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.item.inventory.ClickInventoryEvent;
+import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.InventoryArchetypes;
@@ -44,50 +46,75 @@ import org.spongepowered.api.text.Text;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 public class Backpack {
 
     private final Path backpackFilePath;
-    private final User user_args;
-    private final Player playerCmdSrc;
-    private final Inventory inventory;
-    private final NyxBackpack nb;
     private final Text backpackTitleText;
-    private final String backpackTitleStr;
-    private final int size;
-    private final Boolean saveIt;
+    private final User owner;
+    private final Inventory inventory;
+    public Map<UUID, Boolean> readOnly = new HashMap<>();
+    public int size;
+    public Boolean ownerAllowed = true;
 
-    public Backpack(User user_args, Player player_cmd_src, int size, Boolean saveit, NyxBackpack nb) {
-        this.backpackFilePath = Paths.get(nb.getBackpackPath() + File.separator + user_args.getUniqueId() + ".backpack");
+    public Backpack(User owner, int size) {
+        this.backpackFilePath = Paths.get(NyxBackpack.getInstance().getBackpackPath() + File.separator + owner.getUniqueId() + ".backpack");
 
-        this.nb = nb;
-        this.user_args = user_args;
-        this.playerCmdSrc = player_cmd_src;
+        this.owner = owner;
         this.size = size;
-        this.saveIt = saveit;
 
-        if (!player_cmd_src.getUniqueId().equals(this.user_args.getUniqueId())) {
-            this.backpackTitleText = Text.of(this.user_args.getName() + "'s " + "Backpack");
-            this.backpackTitleStr = this.user_args.getName() + "'s " + "Backpack";
-        } else {
-            this.backpackTitleText = Text.of("Backpack");
-            this.backpackTitleStr = "Backpack";
-        }
+        this.backpackTitleText = Text.of("Backpack");
 
         this.inventory = Inventory.builder()
-                .of(InventoryArchetypes.CHEST).withCarrier(this.playerCmdSrc)
+                .of(InventoryArchetypes.CHEST).withCarrier(owner)
                 .property(InventoryTitle.PROPERTY_NAME, InventoryTitle.of(Text.of(this.backpackTitleText)))
                 .property(InventoryDimension.PROPERTY_NAME, InventoryDimension.of(9, this.size))
                 .listener(ClickInventoryEvent.class, this::triggerClickEvent)
+                .listener(InteractInventoryEvent.Close.class, this::triggerInventoryCloseEvent)
+                .listener(InteractInventoryEvent.Open.class, this::triggerInventoryOpenEvent)
                 .build(NyxBackpack.getInstance());
-        this.loadBackpack(this.user_args, this.nb);
+
+        this.loadBackpack(this.owner);
     }
 
-    private void saveBackpack(User user, Map<String, String> items, NyxBackpack nb) {
+    public void openBackpack() {
+        openBackpack(Sponge.getServer().getPlayer(owner.getUniqueId()).get(), false);
+    }
+
+    public void openBackpack(Player player, Boolean readonly, Boolean ownerallowed) {
+        this.ownerAllowed = ownerallowed;
+        openBackpack(player, readonly);
+    }
+
+    public void openBackpack(Player player, Boolean readonly) {
+        String inventoryname = "";
+        if (!player.getUniqueId().equals(this.owner.getUniqueId())) {
+            inventoryname = owner.getName() + "'s " + "Backpack";
+            this.readOnly.put(player.getUniqueId(), readonly);
+        } else {
+            inventoryname = "Backpack";
+        }
+
+        player.openInventory(this.inventory, Text.of(inventoryname));
+    }
+
+    private void saveBackpack(User owner) {
+        try {
+            Map<String, String> items = this.loadStacks(owner);
+            this.saveBackpack(items);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveBackpack(Map<String, String> items) {
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
         if (items == null || items.isEmpty()) {
@@ -165,7 +192,7 @@ public class Backpack {
         }
     }
 
-    private void loadBackpack(User user, NyxBackpack nb) {
+    private void loadBackpack(User user) {
         Map<String, String> items = new HashMap<String, String>();
         try {
             items = loadSlots();
@@ -198,16 +225,66 @@ public class Backpack {
     }
 
     private void triggerClickEvent(ClickInventoryEvent event) {
-        if (this.saveIt) {
-            try {
-                Map<String, String> items = this.loadStacks(this.user_args);
-                this.saveBackpack(this.user_args, items, this.nb);
-            } catch (Exception e) {
-                e.printStackTrace();
+        final Optional<Player> optionalPlayer = CoreTools.getPlayer(event.getCause());
+
+        if (optionalPlayer.isPresent()) {
+            final Player player = optionalPlayer.get();
+
+            if (player.getUniqueId().equals(this.owner.getUniqueId())) {
+                if (this.ownerAllowed && !this.backpackCheckLock(owner)) {
+                    this.saveBackpack(this.owner);
+                } else {
+                    event.setCancelled(true);
+                }
+            } else {
+                if (readOnly.containsKey(player.getUniqueId())) {
+
+                    if (readOnly.get(player.getUniqueId())) {
+                        event.setCancelled(true);
+                    } else {
+                        this.saveBackpack(this.owner);
+                    }
+                } else {
+                    event.setCancelled(true);
+                }
             }
         } else {
             event.setCancelled(true);
         }
+    }
+
+    private void triggerInventoryOpenEvent(InteractInventoryEvent.Open event) {
+        final Optional<Player> optionalPlayer = CoreTools.getPlayer(event.getCause());
+
+        if (optionalPlayer.isPresent()) {
+            final Player player = optionalPlayer.get();
+            if (!player.getUniqueId().equals(this.owner.getUniqueId())) {
+                player.sendMessage(Text.of("§6Backpack is Open!!"));
+            }
+        }
+    }
+
+    private void triggerInventoryCloseEvent(InteractInventoryEvent.Close event) {
+        final Optional<Player> optionalPlayer = CoreTools.getPlayer(event.getCause());
+
+        if (optionalPlayer.isPresent()) {
+            final Player player = optionalPlayer.get();
+            if (readOnly.containsKey(player.getUniqueId())) {
+
+                if (!readOnly.get(player.getUniqueId())) {
+                    this.ownerAllowed = true;
+                }
+                readOnly.remove(player.getUniqueId());
+                player.sendMessage(Text.of("§6Closed Backpack for:"));
+                player.sendMessage(Text.of("§6Name: §7" + owner.getName()));
+                player.sendMessage(Text.of("§6UUID: §7" + owner.getUniqueId()));
+            }
+        }
+    }
+
+    private Boolean backpackCheckLock(User user) {
+        Path file = Paths.get(NyxBackpack.getInstance().getConfigPath() + File.separator + "backpacks" + File.separator + user.getUniqueId() + ".lock");
+        return Files.exists(file);
     }
 
     public Inventory getBackpack() {
